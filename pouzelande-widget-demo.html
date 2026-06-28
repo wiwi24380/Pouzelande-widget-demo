@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Réservation – Domaine de Pouzelande</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #2D5016;
+    --forest-light: #3d6b1f;
+    --stone: #F2EBD9;
+    --stone-dark: #e0d4bc;
+    --gold: #C8973A;
+    --gold-light: #d9aa50;
+    --white: #FAFAF7;
+    --text: #1a1a14;
+    --text-muted: #6b6452;
+    --unavailable: #e8d5d5;
+    --unavailable-text: #b08080;
+    --selected-bg: #2D5016;
+    --inrange-bg: #c8e6c9;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(45,80,22,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--stone);
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .widget {
+    background: var(--white);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    max-width: 860px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* --- Header --- */
+  .widget-header {
+    background: var(--forest);
+    padding: 28px 36px 22px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .header-leaf {
+    font-size: 32px;
+    line-height: 1;
+  }
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.55rem;
+    color: var(--stone);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .header-text p {
+    color: var(--gold-light);
+    font-size: 0.82rem;
+    font-weight: 300;
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* --- Body layout --- */
+  .widget-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  @media (max-width: 640px) {
+    .widget-body { grid-template-columns: 1fr; }
+    .widget-header { padding: 20px 20px 16px; }
+  }
+
+  /* --- Left panel --- */
+  .panel-left {
+    padding: 28px 32px 28px 36px;
+    border-right: 1px solid var(--stone-dark);
+  }
+  @media (max-width: 640px) {
+    .panel-left { border-right: none; border-bottom: 1px solid var(--stone-dark); padding: 20px 20px; }
+  }
+
+  .section-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  /* Hébergement selector */
+  .lodging-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+  .lodging-card {
+    border: 1.5px solid var(--stone-dark);
+    border-radius: var(--radius);
+    padding: 10px 10px 8px;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+  }
+  .lodging-card:hover { border-color: var(--forest-light); background: #f3f7f0; }
+  .lodging-card.active { border-color: var(--forest); background: #edf4e8; }
+  .lodging-card .lc-icon { font-size: 1.4rem; line-height: 1; }
+  .lodging-card .lc-name { font-size: 0.72rem; font-weight: 500; text-align: center; line-height: 1.2; }
+  .lodging-card .lc-cap { font-size: 0.65rem; color: var(--text-muted); }
+  .lodging-card .lc-price { font-size: 0.7rem; color: var(--gold); font-weight: 600; margin-top: 2px; }
+
+  /* Calendar */
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .cal-month {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--forest);
+  }
+  .cal-btn {
+    background: none;
+    border: 1.5px solid var(--stone-dark);
+    border-radius: 6px;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    transition: border-color 0.15s, color 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-btn:hover { border-color: var(--forest); color: var(--forest); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-day-header {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-align: center;
+    color: var(--text-muted);
+    padding: 4px 0 6px;
+    text-transform: uppercase;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    user-select: none;
+    font-weight: 400;
+    position: relative;
+  }
+  .cal-day:not(.empty):not(.unavailable):hover { background: var(--stone-dark); }
+  .cal-day.empty { cursor: default; }
+  .cal-day.unavailable {
+    background: var(--unavailable);
+    color: var(--unavailable-text);
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+  .cal-day.today { font-weight: 600; color: var(--forest); }
+  .cal-day.selected-start, .cal-day.selected-end {
+    background: var(--forest) !important;
+    color: var(--white) !important;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+  .cal-day.in-range {
+    background: var(--inrange-bg);
+    color: var(--forest);
+    border-radius: 0;
+  }
+  .cal-day.in-range.selected-start { border-radius: 6px 0 0 6px; }
+  .cal-day.in-range.selected-end { border-radius: 0 6px 6px 0; }
+  .cal-day.past { color: #c5bfb0; cursor: default; }
+
+  /* --- Right panel --- */
+  .panel-right {
+    padding: 28px 36px 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  @media (max-width: 640px) {
+    .panel-right { padding: 20px 20px; }
+  }
+
+  /* Guests */
+  .guests-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--stone-dark);
+    margin-bottom: 18px;
+  }
+  .guests-label { font-size: 0.82rem; }
+  .guests-ctrl {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .g-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--stone-dark);
+    background: none;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted);
+    transition: border-color 0.15s, color 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .g-btn:hover { border-color: var(--forest); color: var(--forest); }
+  .g-count { font-weight: 600; font-size: 0.9rem; width: 18px; text-align: center; }
+
+  /* Price summary */
+  .price-box {
+    background: var(--stone);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+    flex: 1;
+  }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .price-row.total {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text);
+    border-top: 1px solid var(--stone-dark);
+    padding-top: 10px;
+    margin-top: 8px;
+    margin-bottom: 0;
+  }
+  .price-row.total span:last-child { color: var(--forest); }
+  .price-placeholder {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 12px 0;
+  }
+
+  /* Availability legend */
+  .legend {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 0.65rem; color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 11px; height: 11px; border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .ld-avail { background: #edf4e8; border: 1.5px solid var(--forest); }
+  .ld-unavail { background: var(--unavailable); }
+  .ld-sel { background: var(--forest); }
+
+  /* CTA */
+  .cta-btn {
+    width: 100%;
+    background: var(--forest);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cta-btn:hover { background: var(--forest-light); }
+  .cta-btn:active { transform: scale(0.99); }
+  .cta-btn:disabled { background: #9cae90; cursor: not-allowed; }
+
+  .cta-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1.5px solid var(--stone-dark);
+    border-radius: var(--radius);
+    padding: 10px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .cta-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Confirmation modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 32px 36px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    text-align: center;
+  }
+  .modal-icon { font-size: 2.6rem; margin-bottom: 12px; }
+  .modal h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--forest);
+    margin-bottom: 8px;
+  }
+  .modal p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+  .modal-details {
+    background: var(--stone);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    text-align: left;
+    font-size: 0.8rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .modal-close {
+    background: var(--forest);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    padding: 11px 28px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+  .modal-close:hover { background: var(--forest-light); }
+
+  .dates-display {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 14px;
+    min-height: 18px;
+  }
+  .dates-display strong { color: var(--forest); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="widget">
+  <div class="widget-header">
+    <div class="header-leaf">🌿</div>
+    <div class="header-text">
+      <h1>Réserver votre séjour</h1>
+      <p>Domaine de Pouzelande · Périgord Blanc</p>
+    </div>
+  </div>
+
+  <div class="widget-body">
+    <!-- LEFT : type d'hébergement + calendrier -->
+    <div class="panel-left">
+      <div class="section-label">Type d'hébergement</div>
+      <div class="lodging-grid" id="lodgingGrid">
+        <button class="lodging-card active" data-type="chambre" data-base="110" data-min="1" data-max="5">
+          <span class="lc-icon">🛏️</span>
+          <span class="lc-name">Chambre d'hôtes</span>
+          <span class="lc-cap">jusqu'à 5 pers.</span>
+          <span class="lc-price">dès 110 €/nuit</span>
+        </button>
+        <button class="lodging-card" data-type="gite" data-base="150" data-min="1" data-max="6">
+          <span class="lc-icon">🏡</span>
+          <span class="lc-name">Gîte</span>
+          <span class="lc-cap">jusqu'à 6 pers.</span>
+          <span class="lc-price">dès 150 €/nuit</span>
+        </button>
+        <button class="lodging-card" data-type="suite" data-base="135" data-min="1" data-max="5">
+          <span class="lc-icon">✨</span>
+          <span class="lc-name">Suite familiale</span>
+          <span class="lc-cap">jusqu'à 5 pers.</span>
+          <span class="lc-price">dès 135 €/nuit</span>
+        </button>
+        <button class="lodging-card" data-type="velo" data-base="35" data-min="1" data-max="5">
+          <span class="lc-icon">🚵</span>
+          <span class="lc-name">VTT électrique</span>
+          <span class="lc-cap">jusqu'à 5 vélos</span>
+          <span class="lc-price">35 €/jour</span>
+        </button>
+      </div>
+
+      <div class="section-label">Dates de séjour</div>
+      <div class="cal-nav">
+        <button class="cal-btn" id="prevMonth">&#8592;</button>
+        <span class="cal-month" id="calMonth"></span>
+        <button class="cal-btn" id="nextMonth">&#8594;</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+
+    <!-- RIGHT : voyageurs + résumé + CTA -->
+    <div class="panel-right">
+      <div class="section-label" style="margin-bottom:6px">Voyageurs</div>
+      <div class="guests-row">
+        <span class="guests-label" id="guestsLabel">Adultes</span>
+        <div class="guests-ctrl">
+          <button class="g-btn" id="gDown">−</button>
+          <span class="g-count" id="gCount">1</span>
+          <button class="g-btn" id="gUp">+</button>
+        </div>
+      </div>
+
+      <div class="section-label">Sélection</div>
+      <div class="dates-display" id="datesDisplay">Choisissez vos dates sur le calendrier</div>
+
+      <div class="section-label">Légende</div>
+      <div class="legend" style="margin-bottom:18px">
+        <div class="legend-item"><div class="legend-dot ld-avail"></div> Disponible</div>
+        <div class="legend-item"><div class="legend-dot ld-unavail"></div> Indisponible</div>
+        <div class="legend-item"><div class="legend-dot ld-sel"></div> Sélectionné</div>
+      </div>
+
+      <div class="section-label">Estimation du séjour</div>
+      <div class="price-box" id="priceBox">
+        <div class="price-placeholder" id="pricePlaceholder">Sélectionnez vos dates pour voir le tarif estimé</div>
+        <div id="priceRows" style="display:none">
+          <div class="price-row"><span id="prNights"></span><span id="prNightCost"></span></div>
+          <div class="price-row"><span>Taxe de séjour (est.)</span><span id="prTax"></span></div>
+          <div class="price-row"><span>Frais de ménage</span><span id="prClean"></span></div>
+          <div class="price-row total"><span>Total estimé</span><span id="prTotal"></span></div>
+        </div>
+      </div>
+
+      <button class="cta-btn" id="bookBtn" disabled>
+        🗓️ Envoyer ma demande
+      </button>
+      <button class="cta-secondary" id="contactBtn">
+        Contacter le domaine directement
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmation -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h2>Demande envoyée !</h2>
+    <p>Votre demande de réservation a bien été transmise au Domaine de Pouzelande. Vous recevrez une confirmation par email sous 24h.</p>
+    <div class="modal-details" id="modalDetails"></div>
+    <button class="modal-close" id="modalClose">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ---- Faux calendrier de disponibilités (simulation) ----
+// En production, ces données viendraient d'une API ou d'un Google Calendar
+const today = new Date();
+today.setHours(0,0,0,0);
+
+function getUnavailableDates(type) {
+  // Simule des indisponibilités selon le type
+  const base = new Date(today);
+  const unavail = new Set();
+  const patterns = {
+    chambre: [[5,10],[18,22],[28,31]],
+    gite:    [[1,5],[14,20],[25,30]],
+    suite:   [[3,8],[19,24]],
+    velo:    [[7,9]]
+  };
+  (patterns[type] || []).forEach(([start, end]) => {
+    for (let i = start; i <= end; i++) {
+      const d = new Date(base.getFullYear(), base.getMonth(), i);
+      unavail.add(d.toDateString());
+    }
+  });
+  return unavail;
+}
+
+// ---- State ----
+let currentYear = today.getFullYear();
+let currentMonth = today.getMonth();
+let selectedStart = null;
+let selectedEnd = null;
+let selectingEnd = false;
+let currentType = 'chambre';
+let currentBasePrice = 110;
+let guests = 1;
+let guestsMin = 1;
+let guestsMax = 5;
+
+// ---- Calendrier ----
+const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAYS_FR = ['Lu','Ma','Me','Je','Ve','Sa','Di'];
+
+function renderCalendar() {
+  const calMonth = document.getElementById('calMonth');
+  const calGrid = document.getElementById('calGrid');
+  calMonth.textContent = `${MONTHS_FR[currentMonth]} ${currentYear}`;
+
+  const unavail = getUnavailableDates(currentType);
+
+  // Headers
+  let html = DAYS_FR.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  const firstDay = new Date(currentYear, currentMonth, 1);
+  let startDow = firstDay.getDay(); // 0=Sun
+  startDow = startDow === 0 ? 6 : startDow - 1; // Mon=0
+
+  for (let i = 0; i < startDow; i++) html += `<div class="cal-day empty"></div>`;
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dateStr = date.toDateString();
+    let cls = 'cal-day';
+
+    if (date < today) {
+      cls += ' past';
+    } else if (unavail.has(dateStr)) {
+      cls += ' unavailable';
+    } else {
+      if (selectedStart && date.getTime() === selectedStart.getTime()) cls += ' selected-start';
+      if (selectedEnd && date.getTime() === selectedEnd.getTime()) cls += ' selected-end';
+      if (selectedStart && selectedEnd && date > selectedStart && date < selectedEnd) cls += ' in-range';
+      if (date.toDateString() === today.toDateString()) cls += ' today';
+    }
+
+    html += `<div class="${cls}" data-date="${date.toISOString()}">${d}</div>`;
+  }
+
+  calGrid.innerHTML = html;
+
+  calGrid.querySelectorAll('.cal-day:not(.empty):not(.unavailable):not(.past)').forEach(el => {
+    el.addEventListener('click', () => handleDayClick(new Date(el.dataset.date)));
+  });
+}
+
+function handleDayClick(date) {
+  const unavail = getUnavailableDates(currentType);
+  if (!selectingEnd) {
+    selectedStart = date;
+    selectedEnd = null;
+    selectingEnd = true;
+  } else {
+    if (date <= selectedStart) {
+      selectedStart = date;
+      selectedEnd = null;
+    } else {
+      // Vérifier pas d'indispo dans la plage
+      let hasBlock = false;
+      for (let d = new Date(selectedStart); d < date; d.setDate(d.getDate()+1)) {
+        if (unavail.has(new Date(d).toDateString())) { hasBlock = true; break; }
+      }
+      if (hasBlock) {
+        selectedStart = date; selectedEnd = null;
+      } else {
+        selectedEnd = date;
+        selectingEnd = false;
+      }
+    }
+  }
+  renderCalendar();
+  updateSummary();
+}
+
+// ---- Résumé prix ----
+function updateSummary() {
+  const display = document.getElementById('datesDisplay');
+  const priceRows = document.getElementById('priceRows');
+  const pricePlaceholder = document.getElementById('pricePlaceholder');
+  const bookBtn = document.getElementById('bookBtn');
+
+  if (!selectedStart || !selectedEnd) {
+    display.innerHTML = selectedStart
+      ? `<strong>Arrivée :</strong> ${fmtDate(selectedStart)} — choisissez la date de départ`
+      : 'Choisissez vos dates sur le calendrier';
+    priceRows.style.display = 'none';
+    pricePlaceholder.style.display = 'block';
+    bookBtn.disabled = true;
+    return;
+  }
+
+  const nights = Math.round((selectedEnd - selectedStart) / 86400000);
+  const isVelo = currentType === 'velo';
+  const unit = isVelo ? 'jour' : 'nuit';
+  const unitCount = nights;
+
+  // Multiplicateur saison (simulation simple)
+  const month = selectedStart.getMonth();
+  let mult = 1;
+  if ([5,6,7].includes(month)) mult = 1.35; // été +35%
+  else if ([3,4,8,9].includes(month)) mult = 1.15; // printemps/automne
+
+  const nightCost = Math.round(currentBasePrice * mult);
+  const subtotal = nightCost * unitCount * (isVelo ? guests : 1);
+  const tax = isVelo ? 0 : Math.round(guests * unitCount * 1.65);
+  const cleaning = isVelo ? 0 : (currentType === 'chambre' ? 0 : 45);
+  const total = subtotal + tax + cleaning;
+
+  display.innerHTML = `<strong>${fmtDate(selectedStart)}</strong> → <strong>${fmtDate(selectedEnd)}</strong> · ${nights} ${unit}${nights > 1 ? 's' : ''}`;
+
+  document.getElementById('prNights').textContent = `${nights} ${unit}${nights>1?'s':''} × ${nightCost} €${isVelo ? ' × '+guests+' vélo'+(guests>1?'s':'') : ''}`;
+  document.getElementById('prNightCost').textContent = subtotal + ' €';
+  document.getElementById('prTax').textContent = tax ? tax + ' €' : '—';
+  document.getElementById('prClean').textContent = cleaning ? cleaning + ' €' : '—';
+  document.getElementById('prTotal').textContent = total + ' €';
+
+  priceRows.style.display = 'block';
+  pricePlaceholder.style.display = 'none';
+
+  const mult_label = mult > 1.3 ? ' (haute saison)' : mult > 1 ? ' (mi-saison)' : '';
+  document.getElementById('prNights').textContent += mult_label;
+
+  bookBtn.disabled = false;
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ---- Navigation mois ----
+document.getElementById('prevMonth').addEventListener('click', () => {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar();
+});
+
+// ---- Sélection hébergement ----
+document.getElementById('lodgingGrid').querySelectorAll('.lodging-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.lodging-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    currentType = card.dataset.type;
+    currentBasePrice = parseInt(card.dataset.base);
+    guestsMin = parseInt(card.dataset.min);
+    guestsMax = parseInt(card.dataset.max);
+    guests = guestsMin;
+    document.getElementById('gCount').textContent = guests;
+    document.getElementById('guestsLabel').textContent = currentType === 'velo' ? 'Nombre de vélos' : 'Voyageurs';
+    selectedStart = null; selectedEnd = null; selectingEnd = false;
+    renderCalendar();
+    updateSummary();
+  });
+});
+
+// ---- Voyageurs ----
+document.getElementById('gDown').addEventListener('click', () => {
+  if (guests > guestsMin) { guests--; document.getElementById('gCount').textContent = guests; updateSummary(); }
+});
+document.getElementById('gUp').addEventListener('click', () => {
+  if (guests < guestsMax) { guests++; document.getElementById('gCount').textContent = guests; updateSummary(); }
+});
+
+// ---- CTA ----
+document.getElementById('bookBtn').addEventListener('click', () => {
+  if (!selectedStart || !selectedEnd) return;
+  const nights = Math.round((selectedEnd - selectedStart) / 86400000);
+  const details = document.getElementById('modalDetails');
+  const typeLabels = { chambre:'Chambre d\'hôtes', gite:'Gîte', suite:'Suite familiale', velo:'VTT électrique' };
+  details.innerHTML = `
+    🏡 <strong>${typeLabels[currentType]}</strong><br>
+    📅 ${fmtDate(selectedStart)} → ${fmtDate(selectedEnd)}<br>
+    🌙 ${nights} nuit${nights>1?'s':''}<br>
+    👥 ${guests} ${currentType==='velo'?'vélo':'voyageur'}${guests>1?'s':''}<br>
+    💶 Total estimé : <strong>${document.getElementById('prTotal').textContent}</strong>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+});
+
+document.getElementById('modalClose').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('show');
+});
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modalOverlay'))
+    document.getElementById('modalOverlay').classList.remove('show');
+});
+
+document.getElementById('contactBtn').addEventListener('click', () => {
+  alert('Redirection vers la page de contact du Domaine de Pouzelande…\n(En production : lien vers contact@pouzelande.fr ou le formulaire du site)');
+});
+
+// ---- Init ----
+renderCalendar();
+updateSummary();
+</script>
+</body>
+</html>
